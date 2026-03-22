@@ -357,4 +357,203 @@ document.addEventListener("DOMContentLoaded", function() {
       + '<span style="color:var(--border)">•</span>'
       + '<span>' + lvlsel.options[lvlsel.selectedIndex].text + '</span>'
       + '<span style="color:var(--border)">•</span>'
-      + '<span>' + LF[lang] + '
+      + '<span>' + LF[lang] + '</span>';
+    w.appendChild(pill);
+
+    // Quick starters
+    var qw = document.createElement("div");
+    qw.className = "qwrap";
+    var qs = QK[mode];
+    for (var j = 0; j < qs.length; j++) {
+      (function(q) {
+        var btn = document.createElement("button");
+        btn.className = "qbtn";
+        btn.textContent = (mode==="tutor"?"💬":mode==="roadmap"?"🗺️":"📝") + " " + (q.length>36 ? q.slice(0,36)+"…" : q);
+        btn.addEventListener("click", function() { sendMsg(q); });
+        qw.appendChild(btn);
+      })(qs[j]);
+    }
+    w.appendChild(qw);
+    chat.appendChild(w);
+  }
+
+  // ── FORMAT ───────────────────────────────────────────────────
+  function esc(s) {
+    return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+  }
+  function fmtInline(t) {
+    return esc(t)
+      .replace(/\*\*([^*]+)\*\*/g,"<strong>$1</strong>")
+      .replace(/`([^`]+)`/g,'<span class="ic">$1</span>');
+  }
+  function fmtMsg(text) {
+    var html = "", last = 0, m;
+    var re = /```(\w*)\n?([\s\S]*?)```/g;
+    while ((m = re.exec(text)) !== null) {
+      if (m.index > last) {
+        html += fmtInline(text.slice(last, m.index)).replace(/\n/g,"<br>");
+      }
+      html += '<pre><code>' + (m[1] ? '<span class="clng">'+m[1]+'</span>' : '') + esc(m[2].trim()) + '</code></pre>';
+      last = m.index + m[0].length;
+    }
+    if (last < text.length) {
+      html += fmtInline(text.slice(last)).replace(/\n/g,"<br>");
+    }
+    return html;
+  }
+
+  // ── ADD MESSAGE ──────────────────────────────────────────────
+  function addMsg(role, content, isNotes) {
+    var w = document.getElementById("wel");
+    if (w) w.remove();
+    clr.style.display = "inline-block";
+
+    var row = document.createElement("div");
+    row.className = "msg " + (role==="ai" ? "a" : "u");
+
+    var av = document.createElement("div");
+    av.className = "av " + (role==="ai" ? "aav" : "uav");
+    av.textContent = role==="ai" ? "🤖" : "🙂";
+
+    var wrap = document.createElement("div");
+    var bub = document.createElement("div");
+    bub.className = "bub " + (role==="ai" ? "ab" : "ub");
+    bub.innerHTML = role==="ai" ? fmtMsg(content) : esc(content).replace(/\n/g,"<br>");
+    wrap.appendChild(bub);
+
+    if (isNotes && role==="ai") {
+      var dl = document.createElement("button");
+      dl.className = "dlbtn";
+      dl.innerHTML = "⬇️ Download Notes";
+      dl.addEventListener("click", function() { dlNotes(content); });
+      wrap.appendChild(dl);
+    }
+
+    row.appendChild(av);
+    row.appendChild(wrap);
+    chat.appendChild(row);
+    chat.scrollTop = chat.scrollHeight;
+  }
+
+  function showTyp() {
+    var t = document.createElement("div");
+    t.id = "typ"; t.className = "typmsg";
+    t.innerHTML = '<div class="av aav">🤖</div><div class="typdots"><div class="d"></div><div class="d"></div><div class="d"></div></div>';
+    chat.appendChild(t);
+    chat.scrollTop = chat.scrollHeight;
+  }
+  function hideTyp() {
+    var t = document.getElementById("typ");
+    if (t) t.remove();
+  }
+
+  // ── SEND ─────────────────────────────────────────────────────
+  function sendMsg(override) {
+    var text = (override !== undefined ? override : inp.value).trim();
+    if (!text || loading) return;
+    if (mode === "notes") {
+      notesTopic = topic !== "General" ? topic : text.replace(/notes on /i,"").slice(0,40);
+    }
+    loading = true;
+    sbtn.disabled = true;
+    addMsg("user", text);
+    history.push({role:"user", content:text});
+    inp.value = "";
+    inp.style.height = "auto";
+    showTyp();
+
+    fetch(BACKEND + "/chat", {
+      method: "POST",
+      headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({messages: history, system: buildSys()}),
+    })
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+      hideTyp();
+      if (data.error) {
+        addMsg("ai", "⚠️ Error: " + data.error);
+      } else {
+        history.push({role:"assistant", content:data.reply});
+        addMsg("ai", data.reply, mode === "notes");
+      }
+      loading = false;
+      sbtn.disabled = false;
+      inp.focus();
+    })
+    .catch(function() {
+      hideTyp();
+      addMsg("ai", "⚠️ Server is waking up. Please wait 30 seconds and try again.");
+      loading = false;
+      sbtn.disabled = false;
+    });
+  }
+
+  // ── DOWNLOAD ─────────────────────────────────────────────────
+  function dlNotes(content) {
+    var clean = content
+      .replace(/```(\w*)\n?([\s\S]*?)```/g, function(_,l2,code){ return "\n---" + (l2||"CODE").toUpperCase() + "---\n" + code + "\n---\n"; })
+      .replace(/\*\*([^*]+)\*\*/g,"$1")
+      .replace(/`([^`]+)`/g,"$1");
+    var blob = new Blob(["CODESAATHI NOTES\n==============================\nTopic: "+notesTopic+"\nDate: "+new Date().toLocaleDateString("en-IN")+"\nLang: "+LF[lang]+" | Level: "+level+"\n==============================\n\n"+clean], {type:"text/plain;charset=utf-8"});
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "CodeSaathi_" + notesTopic.replace(/\s+/g,"_") + ".txt";
+    document.body.appendChild(a); a.click();
+    document.body.removeChild(a); URL.revokeObjectURL(a.href);
+  }
+
+  // ── BIND LANGUAGE BUTTONS ─────────────────────────────────────
+  document.getElementById("lb-en").addEventListener("click", function() { setLang("en"); });
+  document.getElementById("lb-hi").addEventListener("click", function() { setLang("hi"); });
+  document.getElementById("lb-mr").addEventListener("click", function() { setLang("mr"); });
+
+  // ── BIND MODE TABS ────────────────────────────────────────────
+  document.getElementById("mt-tutor").addEventListener("click",   function() { setMode("tutor"); });
+  document.getElementById("mt-roadmap").addEventListener("click", function() { setMode("roadmap"); });
+  document.getElementById("mt-notes").addEventListener("click",   function() { setMode("notes"); });
+
+  // ── BIND TOPIC BUTTONS ────────────────────────────────────────
+  var topicBtns = document.querySelectorAll(".tbtn");
+  for (var i = 0; i < topicBtns.length; i++) {
+    (function(btn) {
+      btn.addEventListener("click", function() {
+        setTopic(btn.getAttribute("data-topic"));
+      });
+    })(topicBtns[i]);
+  }
+
+  // ── BIND LEVEL ────────────────────────────────────────────────
+  lvlsel.addEventListener("change", function() { level = this.value; });
+
+  // ── BIND CLEAR ────────────────────────────────────────────────
+  clr.addEventListener("click", function() { history = []; renderWelcome(); });
+
+  // ── BIND INPUT ────────────────────────────────────────────────
+  inp.addEventListener("input", function() {
+    this.style.height = "auto";
+    this.style.height = Math.min(this.scrollHeight, 100) + "px";
+    sbtn.disabled = !this.value.trim() || loading;
+  });
+
+  inp.addEventListener("keydown", function(e) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      sendMsg();
+    }
+  });
+
+  inp.addEventListener("focus", function() { iwrap.style.borderColor = MC[mode]; });
+  inp.addEventListener("blur",  function() { iwrap.style.borderColor = "#1e1e34"; });
+
+  // ── BIND SEND BUTTON ──────────────────────────────────────────
+  sbtn.addEventListener("click", function() { sendMsg(); });
+
+  // ── INIT ──────────────────────────────────────────────────────
+  setMode("tutor");
+  setTopic("General");
+  setLang("en");
+
+});
+</script>
+</body>
+</html>
