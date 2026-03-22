@@ -33,7 +33,7 @@ app.post("/chat", async (req, res) => {
         "Authorization": "Bearer " + GROQ_API_KEY,
       },
       body: JSON.stringify({
-        model: "llama3-8b-8192",
+        model: "llama3-70b-8192",
         max_tokens: 1024,
         messages: [
           { role: "system", content: system },
@@ -56,7 +56,7 @@ app.post("/chat", async (req, res) => {
 });
 
 // ── Start server ──
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log("CodeSaathi server running on port " + PORT);
 });
