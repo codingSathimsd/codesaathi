@@ -20,8 +20,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 @keyframes bounce{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-5px);opacity:1}}
 @keyframes shimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
 @keyframes glowPulse{0%,100%{box-shadow:0 0 16px rgba(249,115,22,.25)}50%{box-shadow:0 0 28px rgba(249,115,22,.5)}}
-
-/* ── HEADER ── */
 #header{position:relative;z-index:30;background:rgba(7,7,15,.98);border-bottom:1px solid var(--border);flex-shrink:0;}
 .header-top{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;gap:10px;flex-wrap:wrap;}
 .logo{display:flex;align-items:center;gap:10px;}
@@ -40,16 +38,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .mode-tab.active-tutor{background:rgba(99,102,241,.12);color:#818cf8;border-color:rgba(99,102,241,.3);}
 .mode-tab.active-roadmap{background:rgba(249,115,22,.12);color:#fb923c;border-color:rgba(249,115,22,.3);}
 .mode-tab.active-notes{background:rgba(16,185,129,.12);color:#34d399;border-color:rgba(16,185,129,.3);}
-
-/* ── TOPIC BAR ── */
 #topic-bar{display:flex;align-items:center;gap:5px;padding:7px 20px;background:rgba(7,7,15,.92);border-bottom:1px solid var(--border);overflow-x:auto;flex-shrink:0;scrollbar-width:none;position:relative;z-index:20;}
 #topic-bar::-webkit-scrollbar{display:none;}
 .topic-label{font-size:9px;color:var(--muted2);font-family:var(--mono);white-space:nowrap;margin-right:4px;letter-spacing:.1em;}
 .topic-btn{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap;cursor:pointer;transition:all .15s;border:1px solid var(--border);background:transparent;color:var(--muted);font-family:var(--font);}
 .topic-btn:hover{border-color:var(--orange);color:var(--orange);}
 .topic-btn.active{border-color:var(--orange);background:rgba(249,115,22,.1);color:var(--orange);}
-
-/* ── CHAT ── */
 #chat{flex:1;overflow-y:auto;padding:18px 20px 10px;display:flex;flex-direction:column;gap:14px;position:relative;z-index:1;}
 #welcome{display:flex;flex-direction:column;align-items:center;gap:18px;animation:fadeUp .4s ease;padding-top:6px;}
 .mode-cards{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;width:100%;max-width:560px;}
@@ -91,9 +85,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 .dot:nth-child(1){animation:bounce 1.2s 0s infinite;}
 .dot:nth-child(2){animation:bounce 1.2s .2s infinite;}
 .dot:nth-child(3){animation:bounce 1.2s .4s infinite;}
-.error-bar{padding:10px 16px;background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:10px;color:#fca5a5;font-size:13px;text-align:center;}
-
-/* ── INPUT ── */
 #input-area{position:relative;z-index:30;padding:10px 20px 14px;background:rgba(7,7,15,.99);border-top:1px solid var(--border);flex-shrink:0;}
 .input-ctx{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;}
 .input-ctx span{font-size:10px;color:var(--muted2);}
@@ -111,7 +102,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 </head>
 <body>
 
-<!-- HEADER -->
 <div id="header">
   <div class="header-top">
     <div class="logo">
@@ -142,7 +132,6 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   </div>
 </div>
 
-<!-- TOPIC BAR -->
 <div id="topic-bar">
   <span class="topic-label">TOPIC</span>
   <button class="topic-btn active" data-topic="General"    onclick="setTopic(this,'General')">💬 General</button>
@@ -157,10 +146,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
   <button class="topic-btn"        data-topic="Git"        onclick="setTopic(this,'Git')">🌿 Git</button>
 </div>
 
-<!-- CHAT -->
 <div id="chat"></div>
 
-<!-- INPUT -->
 <div id="input-area">
   <div class="input-ctx">
     <span>Active:</span>
@@ -183,9 +170,8 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);height:100vh
 </div>
 
 <script>
-// ── CONFIG — CHANGE THIS AFTER RAILWAY DEPLOY ──────────────────
-const BACKEND_URL = "YOUR_RAILWAY_URL_HERE";
-// Example: const BACKEND_URL = "https://codesaathi-backend.railway.app";
+// ── BACKEND URL ────────────────────────────────────────────────
+const BACKEND_URL = "https://codesaathi-uc35.onrender.com";
 
 // ── STATE ──────────────────────────────────────────────────────
 let lang    = "en";
@@ -217,7 +203,6 @@ const PH = {
   notes:   {en:"e.g. Notes on JavaScript arrays",hi:"e.g. JavaScript arrays ke notes banao",mr:"e.g. JavaScript arrays notes banva..."},
 };
 
-// ── SYSTEM PROMPT ──────────────────────────────────────────────
 function buildSystem() {
   const LR = {
     en:"You MUST respond entirely in English only.",
@@ -234,7 +219,6 @@ function buildSystem() {
   return `You are CodeSaathi — warm friendly AI coding tutor for Indian students.\nLANGUAGE (MANDATORY): ${LR}\nLEVEL: ${LVL}\nTOPIC: ${topic}\nBe warm, encouraging. Use emojis. Explain WHAT/WHY/HOW. Short paragraphs.\nMISSION: Make students feel "Main bhi code kar sakta/sakti hoon!" 🚀`;
 }
 
-// ── SETTERS ────────────────────────────────────────────────────
 function setLang(l) {
   lang = l;
   document.querySelectorAll(".lang-btn").forEach(b => {
@@ -270,7 +254,6 @@ function setMode(m) {
   renderWelcome();
 }
 
-// ── WELCOME ────────────────────────────────────────────────────
 function renderWelcome() {
   const chat = document.getElementById("chat");
   chat.innerHTML = "";
@@ -291,4 +274,18 @@ function renderWelcome() {
   pill.innerHTML = `<span>${topicIcons[topic]||"💬"} ${topic}</span><span class="ctx-sep">•</span><span>${document.getElementById("level-sel").options[document.getElementById("level-sel").selectedIndex].text}</span><span class="ctx-sep">•</span><span>${langFull[lang]}</span>`;
   w.appendChild(pill);
   const qw = document.createElement("div"); qw.className = "quick-wrap";
-  QUICK[
+  QUICK[mode].forEach(q => {
+    const btn = document.createElement("button"); btn.className = "quick-btn";
+    btn.textContent = (mode==="tutor"?"💬":mode==="roadmap"?"🗺️":"📝") + " " + (q.length>38?q.slice(0,38)+"…":q);
+    btn.onclick = () => sendMsg(q);
+    qw.appendChild(btn);
+  });
+  w.appendChild(qw);
+  chat.appendChild(w);
+  document.getElementById("clear-btn").style.display = "none";
+}
+
+function clearChat(){ history=[]; renderWelcome(); }
+
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+function fmtInline(t){ retur
