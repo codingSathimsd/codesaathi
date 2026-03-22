@@ -5,15 +5,15 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// ── Your Anthropic API key comes from Railway environment variable ──
-const API_KEY = process.env.ANTHROPIC_API_KEY;
+// ── Your Groq API key from Render environment variable ──
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-// ── Health check — visiting your Railway URL shows this ──
+// ── Health check ──
 app.get("/", (req, res) => {
   res.send("CodeSaathi backend is live! 🚀");
 });
 
-// ── Main chat endpoint — frontend sends messages here ──
+// ── Main chat endpoint ──
 app.post("/chat", async (req, res) => {
   const { messages, system } = req.body;
 
@@ -21,23 +21,24 @@ app.post("/chat", async (req, res) => {
     return res.status(400).json({ error: "Missing messages or system prompt" });
   }
 
-  if (!API_KEY) {
-    return res.status(500).json({ error: "API key not set in Railway environment variables" });
+  if (!GROQ_API_KEY) {
+    return res.status(500).json({ error: "GROQ_API_KEY not set in environment variables" });
   }
 
   try {
-    const response = await fetch("https://api.anthropic.com/v1/messages", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        "x-api-key": API_KEY,
-        "anthropic-version": "2023-06-01",
+        "Authorization": "Bearer " + GROQ_API_KEY,
       },
       body: JSON.stringify({
-        model: "claude-3-5-haiku-20241022",
+        model: "llama3-8b-8192",
         max_tokens: 1024,
-        system: system,
-        messages: messages,
+        messages: [
+          { role: "system", content: system },
+          ...messages,
+        ],
       }),
     });
 
@@ -47,7 +48,7 @@ app.post("/chat", async (req, res) => {
       return res.status(400).json({ error: data.error.message });
     }
 
-    res.json({ reply: data.content[0].text });
+    res.json({ reply: data.choices[0].message.content });
 
   } catch (err) {
     res.status(500).json({ error: "Server error: " + err.message });
@@ -57,6 +58,5 @@ app.post("/chat", async (req, res) => {
 // ── Start server ──
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`CodeSaathi server running on port ${PORT}`);
+  console.log("CodeSaathi server running on port " + PORT);
 });
-                                 
